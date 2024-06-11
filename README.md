@@ -1,3 +1,7 @@
+## Prepare
+1. Config path `nunti-idMap` and `colib-magazine-config`
+2. Set other envs
+
 ## Development
 
 1. Install the dependencies and develop

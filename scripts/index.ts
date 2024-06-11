@@ -17,7 +17,6 @@ import {
 
 const shareIdsMap = new Map<string, string>();
 const configMap = new Map<string, string>();
-
 async function setUp() {
     const contextId = process.env.CONTEXT_ID;
     const contextName = process.env.CONTEXT_NAME;
@@ -59,7 +58,9 @@ async function setUp() {
 
     console.log(
         "Get last edit time of magazines: ",
-        JSON.stringify(magazineLastUpdates)
+        JSON.stringify(Object.fromEntries(magazineLastUpdates)),
+        "\nlast update time: ",
+        magazineLastUpdate
     );
 
     const currentTime = new Date().toISOString();
@@ -76,25 +77,27 @@ async function setUp() {
 
     console.log("Magazines queried: ", magazineIds);
 
-    magazineIds.map((id: string) => {
-        newMagazineLastUpdates.set(id, currentTime);
-    });
-    setKeyValue(
-        "magazineLastUpdates",
-        JSON.stringify(newMagazineLastUpdates),
-        "colib-magazine-config"
-    );
-    setKeyValue("magazineLastUpdate", currentTime, "colib-magazine-config");
-
     const magazineContents = await queryMagazineContentDB(
         magazineIds,
-        new Map(magazineLastUpdates)
+        magazineLastUpdates
     );
 
     console.log(
         "MagazineContent queried. Length of magazineContent that needs to be processed:",
         magazineContents.length
     );
+
+    // Save last update time
+    magazineIds.map((id: string) => {
+        newMagazineLastUpdates.set(id, currentTime);
+    });
+
+    setKeyValue(
+        "magazineLastUpdates",
+        JSON.stringify(Object.fromEntries(newMagazineLastUpdates)),
+        "colib-magazine-config"
+    );
+    setKeyValue("magazineLastUpdate", currentTime, "colib-magazine-config");
 
     return {
         magazineContents,
@@ -115,7 +118,7 @@ async function main() {
         nomland,
     } = await setUp();
 
-    magazineContents.map(async (item, index) => {
+    for (const [index, item] of magazineContents.entries()) {
         try {
             const {
                 title,
@@ -126,8 +129,13 @@ async function main() {
                 notionReviewUrl,
             } = getProperties(item);
 
-            const { authorUrl, content, entityUrl, publishDate } =
-                await getRawContent(tgUrl);
+            const {
+                authorUrl,
+                content,
+                entityUrl,
+                publishDate,
+                rawTextContent,
+            } = await getRawContent(tgUrl);
 
             if (authorUrl !== authorTgAccount) {
                 log.error(
@@ -159,8 +167,9 @@ async function main() {
                     sources: ["Telegram", contextName],
                     external_url: tgUrl,
                     submitted_by: contextId, // TODO: add it in nomland.js
+                    rawContent: [rawTextContent],
+                    date_published: publishDate.toISOString(),
                 },
-                date_published: publishDate,
                 entityUrl: reviewUrl,
             } as ShareInput;
             if (title) {
@@ -181,34 +190,44 @@ async function main() {
                 const oldDetails = shareNote?.note.details;
                 if (
                     oldDetails?.content === shareInput.details.content &&
-                    oldDetails?.title === shareInput.details.title
+                    oldDetails?.title === shareInput.details.title &&
+                    oldDetails?.date_published ===
+                        shareInput.details.date_published
                 ) {
                     console.log(index + " No changes found: " + tgUrl);
-
-                    return;
+                    continue;
                 }
                 console.log(index + " Requiring updates: " + tgUrl);
 
-                // await nomland.editNote(shareNoteKey, (n: NoteDetails) => {
-                //     n.content = shareInput.details.content;
-                //     n.title = shareInput.details.title;
-                //     return n;
-                // });
+                await nomland.editNote(shareNoteKey, (n: NoteDetails) => {
+                    n.content = shareInput.details.content;
+                    n.title = shareInput.details.title;
+                    n.date_published = shareInput.details.date_published;
+                    return n;
+                });
             } else {
                 // create new share
                 console.log(index + " Creating new share for " + tgUrl);
-                // const { noteKey } = await nomland.createShare(shareInput);
-                // shareIdsMap.set(
-                //     msgKey,
-                //     noteKey.characterId + "-" + noteKey.noteId
-                // );
-                // setKeyValue(msgKey, noteKey.characterId + "-" + noteKey.noteId);
+                const { noteKey } = await nomland.createShare(shareInput);
+                console.log(
+                    "New share created: ",
+                    noteKey.characterId + "-" + noteKey.noteId
+                );
+                shareIdsMap.set(
+                    msgKey,
+                    noteKey.characterId + "-" + noteKey.noteId
+                );
+                setKeyValue(
+                    msgKey,
+                    noteKey.characterId + "-" + noteKey.noteId,
+                    "nunti-idMap"
+                );
             }
         } catch (e) {
             // TODO
             console.log(e);
         }
-    });
+    }
 }
 
 main();

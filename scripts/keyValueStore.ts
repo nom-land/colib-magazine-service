@@ -116,6 +116,7 @@ export function getMapValue(map: Map<string, string>, key: string) {
 
     const targetMap = new Map<string, string>();
     const targetMapCopy = new Map<string, string>();
+
     for (const [key, value] of Object.entries(store)) {
         targetMap.set(key, value);
         targetMapCopy.set(key, value);

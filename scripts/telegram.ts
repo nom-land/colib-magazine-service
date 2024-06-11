@@ -59,6 +59,7 @@ export async function getRawContent(url: string) {
         publishDate,
         content,
         entityUrl,
+        rawTextContent: textContent,
     };
 }
 
