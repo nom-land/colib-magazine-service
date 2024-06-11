@@ -1,0 +1,27 @@
+{
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "script": "tsx scripts/index.ts",
+    "build": "tsup",
+    "lint": "tsc --noEmit",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.11.1",
+    "@hono/zod-validator": "^0.2.1",
+    "@notionhq/client": "^2.2.15",
+    "bunyan": "^1.8.15",
+    "dotenv": "^16.4.5",
+    "hono": "^4.3.5",
+    "node-html-parser": "^6.1.13",
+    "nomland.js": "^0.5.16",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bunyan": "^1.8.11",
+    "@types/node": "^20.11.17",
+    "tsup": "^8.0.2",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.5"
+  }
+}
