@@ -68,3 +68,13 @@ export function getMsgKeyFromTgUrl(url: string, contextGroupId: string) {
     const noteId = url.split("/").pop();
     return contextGroupId + "-" + noteId;
 }
+
+export function getNoteIdFromTgUrl(
+    tgUrl: string,
+    contextGroupId: string,
+    shareIdsMap: Map<string, string>
+) {
+    const msgKey = getMsgKeyFromTgUrl(tgUrl, contextGroupId);
+    const shareId = shareIdsMap.get(msgKey);
+    return { msgKey, shareId };
+}

@@ -4,6 +4,7 @@ import {
 } from "@notionhq/client/build/src/api-endpoints";
 import { Client } from "@notionhq/client";
 import "dotenv/config";
+import { Magazine } from "../src/type";
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
@@ -24,6 +25,7 @@ const CuratorName = "策展人";
 const PrefaceName = "策展前言/导语";
 const BannerName = "banner";
 const TitleName = "标题";
+const OrderName = "排序";
 
 export async function queryMagazinesDB(lastUpdate: string) {
     // TODO: use last update to avoid updating all the data
@@ -47,8 +49,7 @@ export async function queryMagazinesDB(lastUpdate: string) {
                 title: (item.properties[TitleName] as any).title[0].plain_text,
                 subTitle: (item.properties[SubTitleName] as any).rich_text[0]
                     .plain_text,
-                slug: (item.properties[SlugName] as any).rich_text[0]
-                    .plain_text,
+                slug: getMagazineSlug(item),
                 curator: (item.properties[CuratorName] as any).rich_text[0]
                     .plain_text,
                 preface: (item.properties[PrefaceName] as any).rich_text
@@ -56,7 +57,8 @@ export async function queryMagazinesDB(lastUpdate: string) {
                     .join(""),
                 banner: (item.properties[BannerName] as any).files[0].file
                     .plain_text,
-            } as Record<string, string>)
+                uid: item.id,
+            } as Magazine)
     );
     const magazineIds = list.map((item) => {
         return item.id;
@@ -114,7 +116,7 @@ export async function queryMagazineContentDB(
     let results = response.results as DatabaseObjectResponse[];
 
     results = results.filter((item) => {
-        const magazineId = (item.properties["Magazines"] as any).relation[0].id;
+        const magazineId = getMagazineId(item);
         const lastUpdate =
             magazineLastUpdates.get(magazineId) || new Date(0).toISOString();
 
@@ -128,6 +130,15 @@ export async function queryMagazineContentDB(
     });
 
     return results;
+}
+
+function getMagazineId(item: DatabaseObjectResponse) {
+    const magazineId = (item.properties["Magazines"] as any).relation[0].id;
+    return magazineId;
+}
+
+function getMagazineSlug(item: DatabaseObjectResponse): string {
+    return (item.properties[SlugName] as any).rich_text[0].plain_text;
 }
 
 export function getProperties(item: DatabaseObjectResponse) {
@@ -151,6 +162,9 @@ export function getProperties(item: DatabaseObjectResponse) {
     if (!("rollup" in properties[ReviewerIdName])) {
         throw new Error(ReviewerIdName + " is not a rollup");
     }
+    if (!("title" in properties[OrderName])) {
+        throw new Error(OrderName + " is not title.");
+    }
 
     const title = (
         properties[ReviewTitleName].rich_text[0] as RichTextItemResponse
@@ -170,6 +184,12 @@ export function getProperties(item: DatabaseObjectResponse) {
 
     const notionReviewUrl = properties[ReviewUrlName].url as any as string;
 
+    const order =
+        (properties[OrderName].title[0] as RichTextItemResponse)?.plain_text ||
+        "0";
+
+    const magazineId = getMagazineId(item);
+
     return {
         title,
         tgUrl,
@@ -177,5 +197,7 @@ export function getProperties(item: DatabaseObjectResponse) {
         authorTgAccount,
         notionReview,
         notionReviewUrl,
+        order,
+        magazineId,
     };
 }

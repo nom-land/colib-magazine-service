@@ -1,8 +1,8 @@
-import Nomland, { ShareInput, NoteDetails } from "nomland.js";
+import Nomland, { ShareInput, NoteDetails, NoteKey } from "nomland.js";
 
 import "dotenv/config";
 import { log } from "../src/logger";
-import { getMsgKeyFromTgUrl, getRawContent } from "./telegram";
+import { getNoteIdFromTgUrl, getRawContent } from "./telegram";
 import {
     getProperties,
     queryMagazineContentDB,
@@ -11,8 +11,11 @@ import {
 import {
     getMapValue,
     loadKeyValuePairs,
+    loadMagazineOrders,
     setKeyValue,
-    storeAPI,
+    storeMagazineContentAPI,
+    storeMagazineListAPI,
+    storeMagazineOrdersContentAPI,
 } from "./keyValueStore";
 
 const shareIdsMap = new Map<string, string>();
@@ -70,7 +73,7 @@ async function setUp() {
     );
 
     // Save magazinesList
-    const res = storeAPI(magazinesList, "magazinesList");
+    const res = storeMagazineListAPI(magazinesList);
     if (!res) {
         throw new Error("Failed to store magazinesList.");
     }
@@ -101,7 +104,7 @@ async function setUp() {
 
     return {
         magazineContents,
-        magazineIds,
+        magazinesList,
         contextId,
         contextName,
         contextGroupId,
@@ -111,12 +114,21 @@ async function setUp() {
 
 async function main() {
     const {
+        magazinesList,
         magazineContents,
         contextId,
         contextName,
         contextGroupId,
         nomland,
     } = await setUp();
+
+    const ordersRecord = new Map<string, Map<string, string>>();
+
+    magazinesList.map((magazine) => {
+        const targetMap = new Map<string, string>();
+        loadMagazineOrders(targetMap, magazine.uid);
+        ordersRecord.set(magazine.uid, targetMap);
+    });
 
     for (const [index, item] of magazineContents.entries()) {
         try {
@@ -127,7 +139,14 @@ async function main() {
                 authorTgAccount,
                 notionReview,
                 notionReviewUrl,
+                magazineId,
             } = getProperties(item);
+
+            const slug = magazinesList.find((m) => m.uid === magazineId)?.slug;
+            if (!slug) {
+                console.log("Cannot find slug for item: ", item.id);
+                return;
+            }
 
             const {
                 authorUrl,
@@ -176,8 +195,11 @@ async function main() {
                 shareInput.details.title = title;
             }
 
-            const msgKey = getMsgKeyFromTgUrl(tgUrl, contextGroupId);
-            const shareId = shareIdsMap.get(msgKey);
+            const { shareId, msgKey } = getNoteIdFromTgUrl(
+                tgUrl,
+                contextGroupId,
+                shareIdsMap
+            );
 
             if (shareId) {
                 const shareNoteKey = {
@@ -213,6 +235,7 @@ async function main() {
                     "New share created: ",
                     noteKey.characterId + "-" + noteKey.noteId
                 );
+
                 shareIdsMap.set(
                     msgKey,
                     noteKey.characterId + "-" + noteKey.noteId
@@ -228,6 +251,51 @@ async function main() {
             console.log(e);
         }
     }
+
+    for (const [index, item] of magazineContents.entries()) {
+        const { magazineId, tgUrl, order } = getProperties(item);
+        const magazineOrdersMap = ordersRecord.get(magazineId);
+        if (!magazineOrdersMap) {
+            console.log("Cannot find magazine orders map for item: ", item.id);
+            continue;
+        }
+        const { shareId: noteKeyStr } = getNoteIdFromTgUrl(
+            tgUrl,
+            contextGroupId,
+            shareIdsMap
+        );
+
+        if (noteKeyStr) {
+            magazineOrdersMap.set(noteKeyStr, order);
+        } else {
+            console.warn("No noteKeyStr found for item: ", item.id);
+        }
+    }
+
+    magazinesList.map(async (magazine) => {
+        const magazineOrderMap = ordersRecord.get(magazine.uid);
+        if (magazineOrderMap) {
+            storeMagazineOrdersContentAPI(magazine.uid, magazineOrderMap);
+            // sort keys of magazineOrderMap by value
+            const sortedKeys = Array.from(magazineOrderMap.keys())
+                .sort(
+                    (a, b) =>
+                        +magazineOrderMap.get(a)! - +magazineOrderMap.get(b)!
+                )
+                .map(
+                    (key) =>
+                        ({
+                            characterId: key.split("-")[0],
+                            noteId: key.split("-")[1],
+                        } as NoteKey)
+                );
+            const notesData = await nomland.getShares(sortedKeys);
+            storeMagazineContentAPI(
+                magazine.uid,
+                JSON.stringify(notesData, null, 2)
+            );
+        }
+    });
 }
 
 main();

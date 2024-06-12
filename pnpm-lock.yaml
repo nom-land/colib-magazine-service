@@ -30,8 +30,8 @@ importers:
         specifier: ^6.1.13
         version: 6.1.13
       nomland.js:
-        specifier: ^0.5.17
-        version: 0.5.17(typescript@5.4.5)(zod@3.23.8)
+        specifier: ^0.6.3
+        version: 0.6.3(typescript@5.4.5)(zod@3.23.8)
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -1025,6 +1025,9 @@ packages:
 
   nomland.js@0.5.17:
     resolution: {integrity: sha512-R+LxzJWWfT7m66Ja2X8Qi0MXBOmRFiksxNLRn0bxtNN1kDsxOdWArRf9X330W8gwy7Eq4RjGgVr0dKHFGXqBmQ==}
+
+  nomland.js@0.6.3:
+    resolution: {integrity: sha512-ghZi6ArJSuCsOY17B33TMvBnHSvAPjQISj9D40ObUCYXhIUI0LoAikAvJqSXetxWoj50em/yS0laECwegfim+Q==}
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -2435,6 +2438,32 @@ snapshots:
       he: 1.2.0
 
   nomland.js@0.5.17(typescript@5.4.5)(zod@3.23.8):
+    dependencies:
+      '@extractus/article-extractor': 7.3.1
+      '@nomland/elephant': 0.2.10
+      '@urql/core': 4.3.0
+      browser-bunyan: 1.8.0
+      bunyan: 1.8.15
+      crossbell: 1.11.7(typescript@5.4.5)(zod@3.23.8)
+      discord.js: 14.15.3
+      dotenv: 16.4.5
+      eip1193-types: 0.2.1
+      entity-types: 0.1.4(typescript@5.4.5)
+      md5: 2.3.0
+      punycode: 2.3.1
+      viem: 2.13.7(typescript@5.4.5)(zod@3.23.8)
+    transitivePeerDependencies:
+      - bufferutil
+      - canvas
+      - debug
+      - encoding
+      - graphql
+      - supports-color
+      - typescript
+      - utf-8-validate
+      - zod
+
+  nomland.js@0.6.3(typescript@5.4.5)(zod@3.23.8):
     dependencies:
       '@extractus/article-extractor': 7.3.1
       '@nomland/elephant': 0.2.10

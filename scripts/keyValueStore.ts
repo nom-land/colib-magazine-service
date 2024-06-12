@@ -2,6 +2,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import "dotenv/config";
+import { Magazine } from "../src/type";
 
 // TODO: set as global nunti id map file path dir
 // const rootPath = path.resolve("./");
@@ -124,11 +125,8 @@ export function getMapValue(map: Map<string, string>, key: string) {
     return [targetMap, targetMapCopy];
 }
 
-export function storeAPI(
-    data: Record<string, string>[],
-    fileName: string
-): boolean {
-    const filePath = path.join(apiPath, fileName);
+export function storeMagazineListAPI(data: Magazine[]): boolean {
+    const filePath = path.join(apiPath, "magazinesList");
 
     try {
         if (!fs.existsSync(filePath)) {
@@ -137,6 +135,69 @@ export function storeAPI(
 
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 
+        data.map((m) => {
+            const filePath = path.join(apiPath, "magazines/orders-" + m.uid);
+            if (!fs.existsSync(filePath)) {
+                fs.writeFileSync(filePath, "{}");
+            }
+        });
+
+        return true;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+}
+
+export function loadMagazineOrders(targetMap: Map<string, string>, id: string) {
+    const filePath = path.join(apiPath, "magazines/orders-" + id);
+    try {
+        if (!fs.existsSync(filePath)) {
+            console.error("No file path found.");
+            return;
+        }
+
+        const data = fs.readFileSync(filePath, "utf-8");
+        let store: Record<string, string> = {};
+
+        if (data) {
+            store = JSON.parse(data);
+        }
+
+        for (const [key, value] of Object.entries(store)) {
+            targetMap.set(key, value);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+export function storeMagazineOrdersContentAPI(
+    id: string,
+    data: Map<string, string>
+): boolean {
+    const filePath = path.join(apiPath, "magazines/orders-" + id);
+    try {
+        if (!fs.existsSync(filePath)) {
+            fs.writeFileSync(filePath, "{}");
+        }
+
+        fs.writeFileSync(
+            filePath,
+            JSON.stringify(Object.fromEntries(data), null, 2)
+        );
+
+        return true;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+}
+
+export function storeMagazineContentAPI(id: string, data: string) {
+    const filePath = path.join(apiPath, "magazines/content-" + id);
+    try {
+        fs.writeFileSync(filePath, data);
         return true;
     } catch (err) {
         console.error(err);
