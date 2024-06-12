@@ -9,7 +9,7 @@ import { log } from "./logger";
 import { Magazine } from "./type";
 import { resolve } from "path";
 import { readFile } from "fs/promises";
-import { NotePack } from "nomland.js/node";
+import { Feeds } from "nomland.js/node";
 
 const app = new Hono();
 
@@ -40,7 +40,7 @@ app.get("/magazine/:slug", async (c) => {
     if (!magazine) {
         return c.json({ error: "Invalid param." }, 401);
     } else {
-        const content: NotePack = JSON.parse(
+        const feeds: Feeds = JSON.parse(
             await readFile(
                 resolve(__dirname, "../api/magazines/content-" + magazine.uid),
                 "utf-8"
@@ -49,7 +49,7 @@ app.get("/magazine/:slug", async (c) => {
 
         return c.json({
             magazine,
-            content,
+            feeds,
         });
     }
 });

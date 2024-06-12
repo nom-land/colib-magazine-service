@@ -1,6 +1,7 @@
 ## Prepare
 1. Config path `nunti-idMap` and `colib-magazine-config`
 2. Set other envs
+3. make dir /api and /api/magazines
 
 ## Development
 
