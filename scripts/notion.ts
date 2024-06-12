@@ -55,8 +55,7 @@ export async function queryMagazinesDB(lastUpdate: string) {
                 preface: (item.properties[PrefaceName] as any).rich_text
                     .map((t: any) => t.plain_text)
                     .join(""),
-                banner: (item.properties[BannerName] as any).files[0].file
-                    .plain_text,
+                banner: (item.properties[BannerName] as any).files[0].file.url,
                 uid: item.id,
             } as Magazine)
     );
