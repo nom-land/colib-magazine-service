@@ -22,4 +22,4 @@ pnpm start
 ## Notice
 
 - Sharing with images not supported yet.
-- Updates only supported for review content and review title
+- Updates supported for review content and review title and url 
