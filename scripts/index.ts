@@ -392,6 +392,7 @@ async function main() {
                             noteId: key.split("-")[1],
                         } as NoteKey)
                 );
+            // TODO: pagination
             const notesData = await nomland.getShares(sortedKeys);
             notesData.notes.map((note: any) => {
                 const { characterId, noteId } = note.key;
