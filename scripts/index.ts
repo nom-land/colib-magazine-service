@@ -352,8 +352,10 @@ async function main() {
         }
     }
 
+    const repliesMap = new Map<string, string>();
+
     for (const [index, item] of magazineContents.entries()) {
-        const { magazineId, tgUrl, order } = getProperties(item);
+        const { magazineId, tgUrl, order, replies } = getProperties(item);
         const magazineOrdersMap = ordersRecord.get(magazineId);
         if (!magazineOrdersMap) {
             console.log("Cannot find magazine orders map for item: ", item.id);
@@ -367,6 +369,7 @@ async function main() {
 
         if (noteKeyStr) {
             magazineOrdersMap.set(noteKeyStr, order);
+            repliesMap.set(noteKeyStr, replies || "");
         } else {
             console.warn("No noteKeyStr found for item: ", item.id);
         }
@@ -390,6 +393,11 @@ async function main() {
                         } as NoteKey)
                 );
             const notesData = await nomland.getShares(sortedKeys);
+            notesData.notes.map((note: any) => {
+                const { characterId, noteId } = note.key;
+                const replies = repliesMap.get(characterId + "-" + noteId);
+                if (replies) (note as any).replies = replies;
+            });
             storeMagazineContentAPI(
                 magazine.uid,
                 JSON.stringify(notesData, null, 2)

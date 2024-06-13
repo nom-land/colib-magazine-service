@@ -27,6 +27,7 @@ const PrefaceName = "策展前言/导语";
 const BannerName = "banner";
 const TitleName = "标题";
 const OrderName = "排序";
+const RepliesName = "评论精选（多个人内容空一行，非必填）";
 
 export async function queryMagazinesDB(lastUpdate: string) {
     // TODO: use last update to avoid updating all the data
@@ -120,19 +121,20 @@ export async function queryMagazineContentDB(
     });
     let results = response.results as DatabaseObjectResponse[];
 
-    results = results.filter((item) => {
-        const magazineId = getMagazineId(item);
-        const lastUpdate =
-            magazineLastUpdates.get(magazineId) || new Date(0).toISOString();
+    // TODO: filter by last edit by
+    // results = results.filter((item) => {
+    //     const magazineId = getMagazineId(item);
+    //     const lastUpdate =
+    //         magazineLastUpdates.get(magazineId) || new Date(0).toISOString();
 
-        const lastEditedTime = item.last_edited_time;
+    //     const lastEditedTime = item.last_edited_time;
 
-        if (lastUpdate && lastEditedTime < lastUpdate) {
-            return false;
-        }
+    //     if (lastUpdate && lastEditedTime < lastUpdate) {
+    //         return false;
+    //     }
 
-        return true;
-    });
+    //     return true;
+    // });
 
     return results;
 }
@@ -161,6 +163,9 @@ export function getProperties(item: DatabaseObjectResponse) {
     if (!("rich_text" in properties[ReviewContentName])) {
         throw new Error(ReviewContentName + " is not rich text");
     }
+    if (!("rich_text" in properties[RepliesName])) {
+        throw new Error(RepliesName + " is not rich text");
+    }
     if (!("url" in properties[ReviewUrlName])) {
         throw new Error(ReviewUrlName + " is not a URL");
     }
@@ -174,6 +179,7 @@ export function getProperties(item: DatabaseObjectResponse) {
     const title = (
         properties[ReviewTitleName].rich_text[0] as RichTextItemResponse
     )?.plain_text as string | undefined;
+
     const tgUrl = properties[TGLinkPropName].url as any as string;
 
     // It cannot be undefined because we have checked it in the query
@@ -195,6 +201,12 @@ export function getProperties(item: DatabaseObjectResponse) {
 
     const magazineId = getMagazineId(item);
 
+    const replies = (
+        properties[RepliesName].rich_text as any as RichTextItemResponse[]
+    )
+        .map((t: any) => t.plain_text)
+        .join("");
+
     return {
         title,
         tgUrl,
@@ -204,6 +216,7 @@ export function getProperties(item: DatabaseObjectResponse) {
         notionReviewUrl,
         order,
         magazineId,
+        replies,
     };
 }
 
