@@ -230,7 +230,6 @@ async function main() {
                 }
 
                 const oldDetails = shareNote.note.details;
-                console.log("Old details: ", oldDetails);
                 if (
                     oldDetails.content === shareInput.details.content &&
                     oldDetails.title === shareInput.details.title &&
@@ -242,46 +241,46 @@ async function main() {
                     console.log(index + " No changes found: " + tgUrl);
                     continue;
                 } else {
-                    if (oldDetails.content !== shareInput.details.content) {
-                        console.log("Old content: ", oldDetails.content);
-                        console.log(
-                            "New content: ",
-                            shareInput.details.content
-                        );
-                    }
-                    if (oldDetails.title !== shareInput.details.title) {
-                        console.log("Old title: ", oldDetails.title);
-                        console.log("New title: ", shareInput.details.title);
-                    }
-                    if (
-                        oldDetails.date_published !==
-                        shareInput.details.date_published
-                    ) {
-                        console.log(
-                            "Old date_published: ",
-                            oldDetails.date_published
-                        );
-                        console.log(
-                            "New date_published: ",
-                            shareInput.details.date_published
-                        );
-                    }
-                    if (oldDetails.external_url !== tgUrl) {
-                        console.log(
-                            "Old external_url: ",
-                            oldDetails.external_url
-                        );
-                        console.log("New external_url: ", tgUrl);
-                    }
-                    if (
-                        shareNote.entity.metadata.url !== shareInput.entityUrl
-                    ) {
-                        console.log(
-                            "Old entity url: ",
-                            shareNote.entity.metadata.url
-                        );
-                        console.log("New entity url: ", shareInput.entityUrl);
-                    }
+                    // if (oldDetails.content !== shareInput.details.content) {
+                    //     console.log("Old content: ", oldDetails.content);
+                    //     console.log(
+                    //         "New content: ",
+                    //         shareInput.details.content
+                    //     );
+                    // }
+                    // if (oldDetails.title !== shareInput.details.title) {
+                    //     console.log("Old title: ", oldDetails.title);
+                    //     console.log("New title: ", shareInput.details.title);
+                    // }
+                    // if (
+                    //     oldDetails.date_published !==
+                    //     shareInput.details.date_published
+                    // ) {
+                    //     console.log(
+                    //         "Old date_published: ",
+                    //         oldDetails.date_published
+                    //     );
+                    //     console.log(
+                    //         "New date_published: ",
+                    //         shareInput.details.date_published
+                    //     );
+                    // }
+                    // if (oldDetails.external_url !== tgUrl) {
+                    //     console.log(
+                    //         "Old external_url: ",
+                    //         oldDetails.external_url
+                    //     );
+                    //     console.log("New external_url: ", tgUrl);
+                    // }
+                    // if (
+                    //     shareNote.entity.metadata.url !== shareInput.entityUrl
+                    // ) {
+                    //     console.log(
+                    //         "Old entity url: ",
+                    //         shareNote.entity.metadata.url
+                    //     );
+                    //     console.log("New entity url: ", shareInput.entityUrl);
+                    // }
 
                     console.log(index + " Requiring updates: " + tgUrl);
                 }
@@ -291,43 +290,43 @@ async function main() {
 
                 const shareEntity = shareNote.entity;
                 // TODO: re-parse the entity?
-                // if (shareEntity.metadata.url !== shareInput.entityUrl) {
-                //     needsUpdateEntity = true;
-                //     const entity = await parseEntity(
-                //         shareInput.entityUrl,
-                //         "extractus"
-                //     );
+                if (shareEntity.metadata.url !== shareInput.entityUrl) {
+                    needsUpdateEntity = true;
+                    const entity = await parseEntity(
+                        shareInput.entityUrl,
+                        "extractus"
+                    );
 
-                //     const entityInfo = await createEntity(
-                //         entity,
-                //         shareNoteKey.characterId
-                //     );
+                    const entityInfo = await createEntity(
+                        entity,
+                        shareNoteKey.characterId
+                    );
 
-                //     entityId = entityInfo.id;
-                //     console.log("Entity updated: ", entityId);
-                // }
+                    entityId = entityInfo.id;
+                    console.log("Entity updated: ", entityId);
+                }
 
-                // await nomland.editNote(shareNoteKey, (n: NoteMetadata) => {
-                //     n.content = shareInput.details.content;
-                //     n.title = shareInput.details.title;
-                //     n.date_published = shareInput.details.date_published;
-                //     n.external_urls = [tgUrl];
-                //     if (needsUpdateEntity) {
-                //         const curationRecord = n.attributes?.find(
-                //             (attr) => attr.trait_type === "curation record"
-                //         );
-                //         if (curationRecord) {
-                //             curationRecord.value = Number(entityId);
-                //         }
-                //         const entityRecord = n.attributes?.find(
-                //             (attr) => attr.trait_type === "entity id"
-                //         );
-                //         if (entityRecord) {
-                //             entityRecord.value = entityId;
-                //         }
-                //     }
-                //     return n;
-                // });
+                await nomland.editNote(shareNoteKey, (n: NoteMetadata) => {
+                    n.content = shareInput.details.content;
+                    n.title = shareInput.details.title;
+                    n.date_published = shareInput.details.date_published;
+                    n.external_urls = [tgUrl];
+                    if (needsUpdateEntity) {
+                        const curationRecord = n.attributes?.find(
+                            (attr) => attr.trait_type === "curation record"
+                        );
+                        if (curationRecord) {
+                            curationRecord.value = Number(entityId);
+                        }
+                        const entityRecord = n.attributes?.find(
+                            (attr) => attr.trait_type === "entity id"
+                        );
+                        if (entityRecord) {
+                            entityRecord.value = entityId;
+                        }
+                    }
+                    return n;
+                });
             } else {
                 // create new share
                 console.log(index + " Creating new share for " + tgUrl);
