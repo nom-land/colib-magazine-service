@@ -11,10 +11,11 @@
     "@hono/zod-validator": "^0.2.1",
     "@notionhq/client": "^2.2.15",
     "bunyan": "^1.8.15",
+    "crossbell": "^1.11.9",
     "dotenv": "^16.4.5",
     "hono": "^4.3.5",
     "node-html-parser": "^6.1.13",
-    "nomland.js": "^0.6.3",
+    "nomland.js": "^0.6.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {

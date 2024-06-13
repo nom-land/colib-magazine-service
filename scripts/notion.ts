@@ -5,6 +5,7 @@ import {
 import { Client } from "@notionhq/client";
 import "dotenv/config";
 import { Magazine } from "../src/type";
+import { ipfsUploadFile } from "crossbell/ipfs";
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
@@ -43,9 +44,13 @@ export async function queryMagazinesDB(lastUpdate: string) {
     }
     const list = response.results as DatabaseObjectResponse[];
 
-    const magazinesList = list.map(
-        (item) =>
-            ({
+    const magazinesList = await Promise.all(
+        list.map(async (item) => {
+            const bannerUrl = (item.properties[BannerName] as any).files[0].file
+                .url;
+            const bannerIpfs = await getIpfsByUrl(bannerUrl);
+
+            return {
                 title: (item.properties[TitleName] as any).title[0].plain_text,
                 subTitle: (item.properties[SubTitleName] as any).rich_text[0]
                     .plain_text,
@@ -55,9 +60,10 @@ export async function queryMagazinesDB(lastUpdate: string) {
                 preface: (item.properties[PrefaceName] as any).rich_text
                     .map((t: any) => t.plain_text)
                     .join(""),
-                banner: (item.properties[BannerName] as any).files[0].file.url,
+                banner: bannerIpfs.web2url,
                 uid: item.id,
-            } as Magazine)
+            } as Magazine;
+        })
     );
     const magazineIds = list.map((item) => {
         return item.id;
@@ -199,4 +205,14 @@ export function getProperties(item: DatabaseObjectResponse) {
         order,
         magazineId,
     };
+}
+
+async function getIpfsByUrl(url: string) {
+    const response = await fetch(url);
+    if (!response.ok || !response.body) {
+        throw new Error(`Response error: ${response.statusText}`);
+    } else {
+        const ipfsFile = await ipfsUploadFile(await response.blob());
+        return ipfsFile;
+    }
 }

@@ -1,4 +1,9 @@
-import Nomland, { ShareInput, NoteDetails, NoteKey } from "nomland.js";
+import Nomland, {
+    ShareInput,
+    NoteKey,
+    parseEntity,
+    createEntity,
+} from "nomland.js/node";
 
 import "dotenv/config";
 import { log } from "../src/logger";
@@ -17,6 +22,7 @@ import {
     storeMagazineListAPI,
     storeMagazineOrdersContentAPI,
 } from "./keyValueStore";
+import { NoteMetadata } from "crossbell";
 
 const shareIdsMap = new Map<string, string>();
 const configMap = new Map<string, string>();
@@ -209,22 +215,76 @@ async function main() {
 
                 // check if there's difference
                 const shareNote = await nomland.getShare(shareNoteKey);
-                const oldDetails = shareNote?.note.details;
+
+                if (!shareNote) {
+                    console.log(
+                        index +
+                            " Cannot find share for " +
+                            shareNoteKey.characterId +
+                            "-" +
+                            shareNoteKey.noteId +
+                            " " +
+                            tgUrl
+                    );
+                    continue;
+                }
+
+                const oldDetails = shareNote.note.details;
                 if (
-                    oldDetails?.content === shareInput.details.content &&
-                    oldDetails?.title === shareInput.details.title &&
-                    oldDetails?.date_published ===
-                        shareInput.details.date_published
+                    oldDetails.content === shareInput.details.content &&
+                    oldDetails.title === shareInput.details.title &&
+                    oldDetails.date_published ===
+                        shareInput.details.date_published &&
+                    oldDetails.external_url === tgUrl &&
+                    shareNote.entity.metadata.url === shareInput.entityUrl
                 ) {
                     console.log(index + " No changes found: " + tgUrl);
                     continue;
                 }
+
                 console.log(index + " Requiring updates: " + tgUrl);
 
-                await nomland.editNote(shareNoteKey, (n: NoteDetails) => {
+                let needsUpdateEntity = false;
+                let entityId = shareNote.entity.id;
+
+                const shareEntity = shareNote.entity;
+                // TODO: re-parse the entity?
+                if (shareEntity.metadata.url !== shareInput.entityUrl) {
+                    needsUpdateEntity = true;
+                    const entity = await parseEntity(
+                        shareInput.entityUrl,
+                        "extractus"
+                    );
+                    console.log("Entity parsed: ", entity);
+
+                    const entityInfo = await createEntity(
+                        entity,
+                        shareNoteKey.characterId
+                    );
+
+                    entityId = entityInfo.id;
+                    console.log("Entity updated: ", entityId);
+                }
+
+                await nomland.editNote(shareNoteKey, (n: NoteMetadata) => {
                     n.content = shareInput.details.content;
                     n.title = shareInput.details.title;
                     n.date_published = shareInput.details.date_published;
+                    n.external_urls = [tgUrl];
+                    if (needsUpdateEntity) {
+                        const curationRecord = n.attributes?.find(
+                            (attr) => attr.trait_type === "curation record"
+                        );
+                        if (curationRecord) {
+                            curationRecord.value = Number(entityId);
+                        }
+                        const entityRecord = n.attributes?.find(
+                            (attr) => attr.trait_type === "entity id"
+                        );
+                        if (entityRecord) {
+                            entityRecord.value = entityId;
+                        }
+                    }
                     return n;
                 });
             } else {
