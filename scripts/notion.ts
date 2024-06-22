@@ -190,8 +190,10 @@ export function getProperties(item: DatabaseObjectResponse) {
         .url as string;
 
     const notionReview = (
-        properties[ReviewContentName].rich_text[0] as RichTextItemResponse
-    )?.plain_text as string | undefined;
+        properties[ReviewContentName].rich_text as any as RichTextItemResponse[]
+    )
+        .map((t: any) => t.plain_text)
+        .join("");
 
     const notionReviewUrl = properties[ReviewUrlName].url as any as string;
 
