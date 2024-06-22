@@ -1,6 +1,7 @@
 {
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "dry-run": "DRY_RUN=true tsx scripts/index.ts",
     "script": "tsx scripts/index.ts",
     "build": "tsup",
     "lint": "tsc --noEmit",

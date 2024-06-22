@@ -24,6 +24,8 @@ import {
 } from "./keyValueStore";
 import { NoteMetadata } from "crossbell";
 
+const dryRun = process.env.DRY_RUN === "true";
+
 const shareIdsMap = new Map<string, string>();
 const configMap = new Map<string, string>();
 async function setUp() {
@@ -296,55 +298,87 @@ async function main() {
                         shareInput.entityUrl,
                         "extractus"
                     );
+                    if (dryRun) {
+                        console.log(
+                            "entity: ",
+                            JSON.stringify(entity, null, 2)
+                        );
 
-                    const entityInfo = await createEntity(
-                        entity,
-                        shareNoteKey.characterId
-                    );
+                        console.log(
+                            index +
+                                " Dry run: createEntity($entity" +
+                                "," +
+                                shareNoteKey.characterId +
+                                ") " +
+                                tgUrl
+                        );
+                    } else {
+                        const entityInfo = await createEntity(
+                            entity,
+                            shareNoteKey.characterId
+                        );
 
-                    entityId = entityInfo.id;
-                    console.log("Entity updated: ", entityId);
+                        entityId = entityInfo.id;
+                        console.log("Entity updated: ", entityId);
+                    }
                 }
 
-                await nomland.editNote(shareNoteKey, (n: NoteMetadata) => {
-                    n.content = shareInput.details.content;
-                    n.title = shareInput.details.title;
-                    n.date_published = shareInput.details.date_published;
-                    n.external_urls = [tgUrl];
-                    if (needsUpdateEntity) {
-                        const curationRecord = n.attributes?.find(
-                            (attr) => attr.trait_type === "curation record"
-                        );
-                        if (curationRecord) {
-                            curationRecord.value = Number(entityId);
+                if (dryRun) {
+                    console.log(
+                        index +
+                            " Dry run: nomland.editNote(" +
+                            shareNoteKey.characterId +
+                            "-" +
+                            shareNoteKey.noteId +
+                            ") " +
+                            tgUrl
+                    );
+                } else
+                    await nomland.editNote(shareNoteKey, (n: NoteMetadata) => {
+                        n.content = shareInput.details.content;
+                        n.title = shareInput.details.title;
+                        n.date_published = shareInput.details.date_published;
+                        n.external_urls = [tgUrl];
+                        if (needsUpdateEntity) {
+                            const curationRecord = n.attributes?.find(
+                                (attr) => attr.trait_type === "curation record"
+                            );
+                            if (curationRecord) {
+                                curationRecord.value = Number(entityId);
+                            }
+                            const entityRecord = n.attributes?.find(
+                                (attr) => attr.trait_type === "entity id"
+                            );
+                            if (entityRecord) {
+                                entityRecord.value = entityId;
+                            }
                         }
-                        const entityRecord = n.attributes?.find(
-                            (attr) => attr.trait_type === "entity id"
-                        );
-                        if (entityRecord) {
-                            entityRecord.value = entityId;
-                        }
-                    }
-                    return n;
-                });
+                        return n;
+                    });
             } else {
                 // create new share
                 console.log(index + " Creating new share for " + tgUrl);
-                const { noteKey } = await nomland.createShare(shareInput);
-                console.log(
-                    "New share created: ",
-                    noteKey.characterId + "-" + noteKey.noteId
-                );
+                if (dryRun) {
+                    console.log(
+                        "Dry run: nomland.createShare($shareInput) " + tgUrl
+                    );
+                } else {
+                    const { noteKey } = await nomland.createShare(shareInput);
+                    console.log(
+                        "New share created: ",
+                        noteKey.characterId + "-" + noteKey.noteId
+                    );
 
-                shareIdsMap.set(
-                    msgKey,
-                    noteKey.characterId + "-" + noteKey.noteId
-                );
-                setKeyValue(
-                    msgKey,
-                    noteKey.characterId + "-" + noteKey.noteId,
-                    "nunti-idMap"
-                );
+                    shareIdsMap.set(
+                        msgKey,
+                        noteKey.characterId + "-" + noteKey.noteId
+                    );
+                    setKeyValue(
+                        msgKey,
+                        noteKey.characterId + "-" + noteKey.noteId,
+                        "nunti-idMap"
+                    );
+                }
             }
         } catch (e) {
             // TODO
@@ -353,6 +387,11 @@ async function main() {
     }
 
     const repliesMap = new Map<string, string>();
+
+    if (dryRun) {
+        console.log("Dry run: skip storing magazine orders and replies.");
+        return;
+    }
 
     for (const [index, item] of magazineContents.entries()) {
         const { magazineId, tgUrl, order, replies } = getProperties(item);
