@@ -166,8 +166,14 @@ async function main() {
 
             if (authorUrl !== authorTgAccount) {
                 log.error(
-                    "TG Account in notion does not match author url parsed from tg url."
+                    "TG Account in notion does not match author url parsed from tg url. \n" +
+                        "Notion: " +
+                        authorTgAccount +
+                        "\n" +
+                        "Parsed: " +
+                        authorUrl
                 );
+                continue;
             }
 
             // 如果填写了分享语/分享链接的，优先存储填写的内容。未填写的，根据 tg 原始内容解析。
@@ -233,57 +239,60 @@ async function main() {
 
                 const oldDetails = shareNote.note.details;
                 if (
-                    oldDetails.content === shareInput.details.content &&
-                    oldDetails.title === shareInput.details.title &&
-                    oldDetails.date_published ===
-                        shareInput.details.date_published &&
+                    (oldDetails.content || "") ===
+                        (shareInput.details.content || "") &&
+                    (oldDetails.title || "") ===
+                        (shareInput.details.title || "") &&
+                    (oldDetails.date_published || "") ===
+                        (shareInput.details.date_published || "") &&
                     oldDetails.external_url === tgUrl &&
                     shareNote.entity.metadata.url === shareInput.entityUrl
                 ) {
                     console.log(index + " No changes found: " + tgUrl);
                     continue;
                 } else {
-                    // if (oldDetails.content !== shareInput.details.content) {
-                    //     console.log("Old content: ", oldDetails.content);
-                    //     console.log(
-                    //         "New content: ",
-                    //         shareInput.details.content
-                    //     );
-                    // }
-                    // if (oldDetails.title !== shareInput.details.title) {
-                    //     console.log("Old title: ", oldDetails.title);
-                    //     console.log("New title: ", shareInput.details.title);
-                    // }
-                    // if (
-                    //     oldDetails.date_published !==
-                    //     shareInput.details.date_published
-                    // ) {
-                    //     console.log(
-                    //         "Old date_published: ",
-                    //         oldDetails.date_published
-                    //     );
-                    //     console.log(
-                    //         "New date_published: ",
-                    //         shareInput.details.date_published
-                    //     );
-                    // }
-                    // if (oldDetails.external_url !== tgUrl) {
-                    //     console.log(
-                    //         "Old external_url: ",
-                    //         oldDetails.external_url
-                    //     );
-                    //     console.log("New external_url: ", tgUrl);
-                    // }
-                    // if (
-                    //     shareNote.entity.metadata.url !== shareInput.entityUrl
-                    // ) {
-                    //     console.log(
-                    //         "Old entity url: ",
-                    //         shareNote.entity.metadata.url
-                    //     );
-                    //     console.log("New entity url: ", shareInput.entityUrl);
-                    // }
-
+                    /*
+                    if (oldDetails.content !== shareInput.details.content) {
+                        console.log("Old content: ", oldDetails.content);
+                        console.log(
+                            "New content: ",
+                            shareInput.details.content
+                        );
+                    }
+                    if (oldDetails.title !== shareInput.details.title) {
+                        console.log("Old title: ", oldDetails.title);
+                        console.log("New title: ", shareInput.details.title);
+                    }
+                    if (
+                        oldDetails.date_published !==
+                        shareInput.details.date_published
+                    ) {
+                        console.log(
+                            "Old date_published: ",
+                            oldDetails.date_published
+                        );
+                        console.log(
+                            "New date_published: ",
+                            shareInput.details.date_published
+                        );
+                    }
+                    if (oldDetails.external_url !== tgUrl) {
+                        console.log(
+                            "Old external_url: ",
+                            oldDetails.external_url
+                        );
+                        console.log("New external_url: ", tgUrl);
+                    }
+                    if (
+                        shareNote.entity.metadata.url !== shareInput.entityUrl
+                    ) {
+                        console.log(
+                            "Old entity url: ",
+                            shareNote.entity.metadata.url
+                        );
+                        console.log("New entity url: ", shareInput.entityUrl);
+                    }
+*/
                     console.log(index + " Requiring updates: " + tgUrl);
                 }
 
